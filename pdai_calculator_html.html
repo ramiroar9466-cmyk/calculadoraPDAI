@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora PDAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .lucide-icon {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div id="app"></div>
+
+    <script>
+        // Simulación de iconos Lucide
+        const Calculator = () => `<svg class="lucide-icon" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="16" y1="10" y2="10"/><line x1="8" x2="16" y1="14" y2="14"/><line x1="8" x2="16" y1="18" y2="18"/></svg>`;
+
+        class PDAICalculator {
+            constructor() {
+                this.skinActivityScores = {
+                    ears: 0, nose: 0, restOfFace: 0, neck: 0, chest: 0, abdomen: 0,
+                    backButtocks: 0, arms: 0, hands: 0, legs: 0, feet: 0, genitals: 0
+                };
+
+                this.skinDamageScores = {
+                    ears: 0, nose: 0, restOfFace: 0, neck: 0, chest: 0, abdomen: 0,
+                    backButtocks: 0, arms: 0, hands: 0, legs: 0, feet: 0, genitals: 0
+                };
+
+                this.scalpScores = { activity: 0, damage: 0 };
+
+                this.mucousScores = {
+                    eyes: 0, nose: 0, buccalMucosa: 0, hardPalate: 0, softPalate: 0,
+                    upperGingiva: 0, lowerGingiva: 0, tongue: 0, floorOfMouth: 0,
+                    labialMucosa: 0, posteriorPharynx: 0, anogenital: 0
+                };
+
+                this.init();
+            }
+
+            init() {
+                document.getElementById('app').innerHTML = this.render();
+                this.attachEventListeners();
+                this.calculateTotals();
+            }
+
+            calculateTotals() {
+                const skinActivityTotal = Object.values(this.skinActivityScores).reduce((sum, score) => sum + score, 0);
+                const skinDamageTotal = Object.values(this.skinDamageScores).reduce((sum, score) => sum + score, 0);
+                const mucousActivityTotal = Object.values(this.mucousScores).reduce((sum, score) => sum + score, 0);
+                
+                const totalActivity = skinActivityTotal + this.scalpScores.activity + mucousActivityTotal;
+                const totalDamage = skinDamageTotal + this.scalpScores.damage;
+
+                let severity = '';
+                if (totalActivity <= 15) {
+                    severity = 'Leve';
+                } else if (totalActivity >= 16 && totalActivity <= 45) {
+                    severity = 'Moderado';
+                } else {
+                    severity = 'Severo';
+                }
+
+                this.updateResults({
+                    skinActivity: skinActivityTotal,
+                    skinDamage: skinDamageTotal,
+                    scalpActivity: this.scalpScores.activity,
+                    scalpDamage: this.scalpScores.damage,
+                    mucousActivity: mucousActivityTotal,
+                    totalActivity,
+                    totalDamage,
+                    severity
+                });
+            }
+
+            updateResults(totals) {
+                document.getElementById('totalActivity').textContent = totals.totalActivity;
+                document.getElementById('totalDamage').textContent = totals.totalDamage;
+                document.getElementById('severity').textContent = totals.severity;
+                document.getElementById('skinActivityTotal').textContent = totals.skinActivity;
+                document.getElementById('skinDamageTotal').textContent = totals.skinDamage;
+                document.getElementById('scalpTotal').textContent = totals.scalpActivity + totals.scalpDamage;
+                document.getElementById('mucousTotal').textContent = totals.mucousActivity;
+                document.getElementById('breakdownSkin').textContent = totals.skinActivity;
+                document.getElementById('breakdownScalp').textContent = totals.scalpActivity;
+                document.getElementById('breakdownMucous').textContent = totals.mucousActivity;
+
+                const severityElement = document.getElementById('severityCard');
+                severityElement.className = `p-4 rounded-lg border ${this.getSeverityColor(totals.severity)}`;
+
+                document.getElementById('severityRange').textContent = 
+                    totals.severity === 'Leve' ? '≤15 puntos' :
+                    totals.severity === 'Moderado' ? '16-45 puntos' : '>45 puntos';
+            }
+
+            getSeverityColor(severity) {
+                switch(severity) {
+                    case 'Leve': return 'text-green-600 bg-green-50 border-green-200';
+                    case 'Moderado': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+                    case 'Severo': return 'text-red-600 bg-red-50 border-red-200';
+                    default: return 'text-gray-600 bg-gray-50 border-gray-200';
+                }
+            }
+
+            attachEventListeners() {
+                // Skin Activity listeners
+                Object.keys(this.skinActivityScores).forEach(area => {
+                    document.getElementById(`skinActivity_${area}`).addEventListener('change', (e) => {
+                        this.skinActivityScores[area] = parseInt(e.target.value) || 0;
+                        this.calculateTotals();
+                    });
+                });
+
+                // Skin Damage listeners
+                Object.keys(this.skinDamageScores).forEach(area => {
+                    document.getElementById(`skinDamage_${area}`).addEventListener('change', (e) => {
+                        this.skinDamageScores[area] = parseInt(e.target.value) || 0;
+                        this.calculateTotals();
+                    });
+                });
+
+                // Scalp listeners
+                document.getElementById('scalpActivity').addEventListener('change', (e) => {
+                    this.scalpScores.activity = parseInt(e.target.value) || 0;
+                    this.calculateTotals();
+                });
+
+                document.getElementById('scalpDamage').addEventListener('change', (e) => {
+                    this.scalpScores.damage = parseInt(e.target.value) || 0;
+                    this.calculateTotals();
+                });
+
+                // Mucous listeners
+                Object.keys(this.mucousScores).forEach(area => {
+                    document.getElementById(`mucous_${area}`).addEventListener('change', (e) => {
+                        this.mucousScores[area] = parseInt(e.target.value) || 0;
+                        this.calculateTotals();
+                    });
+                });
+
+                // Reset button
+                document.getElementById('resetButton').addEventListener('click', () => {
+                    this.resetCalculator();
+                });
+            }
+
+            resetCalculator() {
+                Object.keys(this.skinActivityScores).forEach(key => this.skinActivityScores[key] = 0);
+                Object.keys(this.skinDamageScores).forEach(key => this.skinDamageScores[key] = 0);
+                this.scalpScores = { activity: 0, damage: 0 };
+                Object.keys(this.mucousScores).forEach(key => this.mucousScores[key] = 0);
+
+                // Reset all selects
+                document.querySelectorAll('select').forEach(select => select.value = '0');
+                this.calculateTotals();
+            }
+
+            createSelect(id, options, value = 0) {
+                return `
+                    <select id="${id}" class="w-full p-2 text-sm border border-gray-300 rounded-md" value="${value}">
+                        ${options.map(option => `<option value="${option.value}" ${value == option.value ? 'selected' : ''}>${option.label}</option>`).join('')}
+                    </select>
+                `;
+            }
+
+            render() {
+                const skinActivityOptions = [
+                    { value: 0, label: '0 - Ausente' },
+                    { value: 1, label: '1 - 1-3 lesiones, hasta 2 cm diámetro' },
+                    { value: 2, label: '2 - 2-3 lesiones, al menos dos >2 cm' },
+                    { value: 3, label: '3 - 4-10 lesiones' },
+                    { value: 5, label: '5 - 5-10 lesiones, >6 cm diámetro' },
+                    { value: 10, label: '10 - 10+ lesiones, al menos una >6 cm o >15 cm diámetro' }
+                ];
+
+                const skinDamageOptions = [
+                    { value: 0, label: '0 - Ausente' },
+                    { value: 1, label: '1 - Presente' }
+                ];
+
+                const scalpActivityOptions = [
+                    { value: 0, label: '0 - Ausente' },
+                    { value: 1, label: '1 - Un cuadrante' },
+                    { value: 2, label: '2 - Dos cuadrantes' },
+                    { value: 3, label: '3 - Tres cuadrantes' },
+                    { value: 4, label: '4 - Afecta todo el cráneo' },
+                    { value: 10, label: '10 - Al menos una lesión >6 cm' }
+                ];
+
+                const mucousOptions = [
+                    { value: 0, label: '0 - Ausente' },
+                    { value: 1, label: '1 - 1 lesión' },
+                    { value: 2, label: '2 - 2-3 lesiones' },
+                    { value: 5, label: '5 - 4 lesiones o 2 lesiones >2 cm' },
+                    { value: 10, label: '10 - Área extensa' }
+                ];
+
+                const skinAreas = [
+                    { key: 'ears', label: 'Oídos' },
+                    { key: 'nose', label: 'Nariz' },
+                    { key: 'restOfFace', label: 'Resto de la cara' },
+                    { key: 'neck', label: 'Cuello' },
+                    { key: 'chest', label: 'Pecho' },
+                    { key: 'abdomen', label: 'Abdomen' },
+                    { key: 'backButtocks', label: 'Espalda, glúteos' },
+                    { key: 'arms', label: 'Brazos' },
+                    { key: 'hands', label: 'Manos' },
+                    { key: 'legs', label: 'Piernas' },
+                    { key: 'feet', label: 'Pies' },
+                    { key: 'genitals', label: 'Genitales' }
+                ];
+
+                const mucousAreas = [
+                    { key: 'eyes', label: 'Ojos' },
+                    { key: 'nose', label: 'Nariz' },
+                    { key: 'buccalMucosa', label: 'Mucosa bucal' },
+                    { key: 'hardPalate', label: 'Paladar duro' },
+                    { key: 'softPalate', label: 'Paladar blando' },
+                    { key: 'upperGingiva', label: 'Encía superior' },
+                    { key: 'lowerGingiva', label: 'Encía inferior' },
+                    { key: 'tongue', label: 'Lengua' },
+                    { key: 'floorOfMouth', label: 'Piso de la boca' },
+                    { key: 'labialMucosa', label: 'Mucosa labial' },
+                    { key: 'posteriorPharynx', label: 'Faringe posterior' },
+                    { key: 'anogenital', label: 'Anogenital' }
+                ];
+
+                return `
+                    <div class="max-w-7xl mx-auto p-6 bg-white">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                            <div class="flex items-center mb-4">
+                                ${Calculator()}
+                                <h1 class="text-2xl font-bold text-blue-800 ml-3">Calculadora PDAI</h1>
+                            </div>
+                            <p class="text-blue-700">Pemphigus Disease Area Index - Índice de Área de Enfermedad de Pénfigo</p>
+                        </div>
+
+                        <div class="grid lg:grid-cols-3 gap-6">
+                            <!-- Sección Piel - Actividad -->
+                            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                <h2 class="text-lg font-semibold text-orange-800 mb-4">
+                                    Piel - Actividad (Erosiones/Ampollas o nuevo eritema)
+                                </h2>
+                                <div class="space-y-3 max-h-96 overflow-y-auto">
+                                    ${skinAreas.map(area => `
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                                ${area.label}
+                                            </label>
+                                            ${this.createSelect(`skinActivity_${area.key}`, skinActivityOptions)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="mt-4 p-3 bg-orange-100 rounded">
+                                    <strong>Total Piel Actividad: <span id="skinActivityTotal">0</span>/120</strong>
+                                </div>
+                            </div>
+
+                            <!-- Sección Piel - Daño -->
+                            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                <h2 class="text-lg font-semibold text-purple-800 mb-4">
+                                    Piel - Daño (Hiperpigmentación/eritema post-inflamatorio)
+                                </h2>
+                                <div class="space-y-3 max-h-96 overflow-y-auto">
+                                    ${skinAreas.map(area => `
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                                ${area.label}
+                                            </label>
+                                            ${this.createSelect(`skinDamage_${area.key}`, skinDamageOptions)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="mt-4 p-3 bg-purple-100 rounded">
+                                    <strong>Total Piel Daño: <span id="skinDamageTotal">0</span>/12</strong>
+                                </div>
+                            </div>
+
+                            <!-- Sección Cuero Cabelludo y Mucosas -->
+                            <div class="space-y-6">
+                                <!-- Cuero Cabelludo -->
+                                <div class="bg-teal-50 border border-teal-200 rounded-lg p-4">
+                                    <h2 class="text-lg font-semibold text-teal-800 mb-4">Cuero Cabelludo</h2>
+                                    
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            Actividad (Erosiones/Ampollas)
+                                        </label>
+                                        ${this.createSelect('scalpActivity', scalpActivityOptions)}
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            Daño (Hiperpigmentación/eritema)
+                                        </label>
+                                        <select id="scalpDamage" class="w-full p-2 border border-gray-300 rounded-md">
+                                            <option value="0">0 - Ausente</option>
+                                            <option value="1">1 - Presente</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="p-3 bg-teal-100 rounded">
+                                        <strong>Total Cuero Cabelludo: <span id="scalpTotal">0</span></strong>
+                                    </div>
+                                </div>
+
+                                <!-- Membranas Mucosas -->
+                                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                                    <h2 class="text-lg font-semibold text-indigo-800 mb-4">
+                                        Membranas Mucosas (Erosiones/Ampollas)
+                                    </h2>
+                                    <div class="space-y-3 max-h-80 overflow-y-auto">
+                                        ${mucousAreas.map(area => `
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                                    ${area.label}
+                                                </label>
+                                                ${this.createSelect(`mucous_${area.key}`, mucousOptions)}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div class="mt-4 p-3 bg-indigo-100 rounded">
+                                        <strong>Total Mucosas: <span id="mucousTotal">0</span>/120</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resultados -->
+                        <div class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6">
+                            <h2 class="text-xl font-bold text-gray-800 mb-4">Resultados PDAI</h2>
+                            
+                            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                <div class="bg-white p-4 rounded-lg border">
+                                    <h3 class="text-sm font-medium text-gray-600">Puntaje Total de Actividad</h3>
+                                    <p class="text-2xl font-bold text-orange-600" id="totalActivity">0</p>
+                                    <p class="text-xs text-gray-500">Máximo: 250</p>
+                                </div>
+                                
+                                <div class="bg-white p-4 rounded-lg border">
+                                    <h3 class="text-sm font-medium text-gray-600">Puntaje Total de Daño</h3>
+                                    <p class="text-2xl font-bold text-purple-600" id="totalDamage">0</p>
+                                    <p class="text-xs text-gray-500">Máximo: 13</p>
+                                </div>
+                                
+                                <div id="severityCard" class="p-4 rounded-lg border text-gray-600 bg-gray-50 border-gray-200">
+                                    <h3 class="text-sm font-medium">Clasificación</h3>
+                                    <p class="text-2xl font-bold" id="severity">-</p>
+                                    <p class="text-xs mt-1" id="severityRange">-</p>
+                                </div>
+
+                                <div class="bg-white p-4 rounded-lg border">
+                                    <h3 class="text-sm font-medium text-gray-600">Desglose</h3>
+                                    <p class="text-sm">Piel: <span id="breakdownSkin">0</span></p>
+                                    <p class="text-sm">Cuero cabelludo: <span id="breakdownScalp">0</span></p>
+                                    <p class="text-sm">Mucosas: <span id="breakdownMucous">0</span></p>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-medium text-blue-800 mb-2">Criterios de Clasificación:</h4>
+                                <ul class="text-sm text-blue-700 space-y-1">
+                                    <li><strong>Leve:</strong> ≤15 puntos de actividad</li>
+                                    <li><strong>Moderado:</strong> 16-45 puntos de actividad</li>
+                                    <li><strong>Severo:</strong> >45 puntos de actividad</li>
+                                </ul>
+                            </div>
+                            
+                            <button id="resetButton" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                                Reiniciar Calculadora
+                            </button>
+                        </div>
+
+                        <!-- Información del autor -->
+                        <div class="mt-6 text-center bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p class="text-xs text-blue-600 mb-1">
+                                Creado por
+                            </p>
+                            <p class="text-sm text-blue-800 font-medium">
+                                Dr. Ramiro Alanis Ronquillo
+                            </p>
+                            <p class="text-xs text-blue-600">
+                                Residente de primer año de Dermatología del CMN 20 de Noviembre, ISSSTE
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Inicializar la aplicación cuando se carga la página
+        window.addEventListener('DOMContentLoaded', () => {
+            new PDAICalculator();
+        });
+    </script>
+</body>
+</html>
